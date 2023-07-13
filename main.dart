@@ -40,6 +40,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   String? userName;
   String? userEmail;
+  String? userType;
 
   @override
   void initState() {
@@ -59,23 +60,52 @@ class _MyHomePageState extends State<MyHomePage> {
       setState(() {
         userName = userSnapshot.get('name');
         userEmail = userSnapshot.get('email');
+        userType = userSnapshot.get('userType');
       });
     }
+  }
+
+  void _logout() async {
+    await FirebaseAuth.instance.signOut();
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (context) => LogIn()),
+          (Route<dynamic> route) => false,
+    );
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Logged out successfully.'),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.black45,
       appBar: AppBar(
         title: Text('Schedule Me'),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.logout),
+            onPressed: _logout,
+          ),
+        ],
       ),
       body:
       Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
-          if (userName != null) Text('$userName'),
+          if (userName != null)
+            Text(
+                'Logged in as: $userName',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.teal),
+            ),
+          if (userType != null) Text(
+              '$userType',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.teal),
+          ),
           ElevatedButton(
             onPressed: () {
               Navigator.push(

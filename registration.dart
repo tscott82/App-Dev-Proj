@@ -9,24 +9,39 @@ import 'log_in.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
-  runApp(LogIn());
+  runApp(Registration());
+}
+
+enum UserType{
+  Regular,
+  Admin,
 }
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   Future<String?> registerWithEmailAndPassword(
-      String email, String password) async {
+      String name, String email, String password, UserType userType) async {
     try {
+      if (password.length > 12) {
+        print('Password cannot exceed 12 characters');
+        return null;
+      }
       final UserCredential result = await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
       final User? user = result.user;
       if (user != null) {
-        final name = user.displayName;
-        final email = user.email;
+        //additional user information
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .set({
+          'name': name,
+          'email': email,
+          'userType': userType == UserType.Admin ? 'admin' : 'regular',
+        });
         return user.uid;
       } else {
         return null;
@@ -46,6 +61,7 @@ class Registration extends StatefulWidget {
 class _RegistrationState extends State<Registration> {
   int count = 0;
   int _currentIndex = 0;
+  String _errorMessage = '';
   final List<Widget> _pages = [
     Registration(),
     LogIn(),
@@ -53,6 +69,7 @@ class _RegistrationState extends State<Registration> {
   TextEditingController name = TextEditingController();
   TextEditingController email = TextEditingController();
   TextEditingController password = TextEditingController();
+  UserType _selectedUserType = UserType.Regular;
 
   @override
   Widget build(BuildContext context) {
@@ -62,7 +79,7 @@ class _RegistrationState extends State<Registration> {
         primarySwatch: Colors.teal,
       ),
       home: Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.black45,
         appBar: AppBar(
           title: Text('Registration'),
           centerTitle: true,
@@ -72,7 +89,8 @@ class _RegistrationState extends State<Registration> {
           children: <Widget>[
             Container(
               padding: EdgeInsets.symmetric(horizontal: 150.0, vertical: 10.0),
-              child: Text('Name',
+              child: Text(
+                'Name',
                 style: TextStyle(fontSize: 26, color: Colors.lightBlueAccent),
               ),
             ),
@@ -82,14 +100,15 @@ class _RegistrationState extends State<Registration> {
               height: 60,
               width: 400,
               colors: const [Colors.lightBlueAccent, Colors.green],
-              text: "First and Last Name",
+              text: "Enter Name",
               fontColor: Colors.black,
               fontSize: 15,
               fontWeight: FontWeight.normal,
             ),
             Container(
               padding: EdgeInsets.symmetric(horizontal: 150.0, vertical: 10.0),
-              child: Text('Email',
+              child: Text(
+                'Email',
                 style: TextStyle(fontSize: 26, color: Colors.lightBlueAccent),
               ),
             ),
@@ -106,7 +125,8 @@ class _RegistrationState extends State<Registration> {
             ),
             Container(
               padding: EdgeInsets.symmetric(horizontal: 130.0, vertical: 10.0),
-              child: Text('Password',
+              child: Text(
+                'Password',
                 style: TextStyle(fontSize: 26, color: Colors.lightBlueAccent),
               ),
             ),
@@ -116,64 +136,78 @@ class _RegistrationState extends State<Registration> {
               height: 60,
               width: 400,
               colors: const [Colors.lightBlueAccent, Colors.green],
-              text: "password123",
+              text: "Enter a password",
               fontColor: Colors.black,
               fontSize: 15,
               fontWeight: FontWeight.normal,
             ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                ElevatedButton(
-                  onPressed: null,
-                  child: Text(''),
-                  style: ElevatedButton.styleFrom(
-                      primary: Colors.green),
-                ),
-                Container(
-                  padding: EdgeInsets.symmetric(vertical: 50.0),
-                  child: Text(
-                      'Manager',
-                      style: TextStyle(
-                          fontSize: 24, color: Colors.lightBlueAccent)),
-                ),
-                ElevatedButton(
-                  onPressed: null,
-                  child: Text(''),
-                  style: ElevatedButton.styleFrom(
-                      primary: Colors.lightBlueAccent),
-                ),
-                Container(
-                  padding: EdgeInsets.symmetric(vertical: 30.0),
-                  child: Text('Employee',
-                      style: TextStyle(
-                          fontSize: 24, color: Colors.lightBlueAccent)),
-                ),
-              ],
+            if(_errorMessage.isNotEmpty)
+              Text(
+                _errorMessage!,
+                style: TextStyle(color: Colors.red),
+              ),
+            ListTile(
+              title: Text('User Type',
+              style: TextStyle(color: Colors.teal)),
+              subtitle: Row(
+                children: <Widget>[
+                  Radio<UserType>(
+                    value: UserType.Regular,
+                    groupValue: _selectedUserType,
+                    onChanged: (UserType? value) {
+                      setState(() {
+                        _selectedUserType = value!;
+                      });
+                    },
+                  ),
+                  Text('Regular',
+                      style: TextStyle(color: Colors.teal)),
+                  Radio<UserType>(
+                    value: UserType.Admin,
+                    groupValue: _selectedUserType,
+                    onChanged: (UserType? value) {
+                      setState(() {
+                        _selectedUserType = value!;
+                      });
+                    },
+                  ),
+                  Text('Admin',
+                  style: TextStyle(color: Colors.teal)),
+                ],
+              ),
             ),
             FloatingActionButton(
               backgroundColor: Colors.lightBlueAccent,
               child: const Text('Create'),
               onPressed: () async {
-                final String? uid = await AuthService()
-                    .registerWithEmailAndPassword(
-                  email.text.trim(), // assuming name field is used for email
-                  password.text.trim(), // provide a default password or use a separate password field
-                );
-
-                if (uid != null) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => LogIn()),
-                  ); // Registration successful
-                  // Save additional user data to Firestore if needed
-                  // Redirect to another screen or perform any other actions
+                if (password.text.trim().length > 12) {
+                  setState(() {
+                    _errorMessage = 'Password cannot exceed 12 characters';
+                  });
                 } else {
-                  // Registration failed
-                  // Display an error message or handle the error appropriately
+                  final String? uid = await AuthService()
+                      .registerWithEmailAndPassword(
+                    name.text.trim(),
+                    email.text.trim(), // assuming email field is used for email
+                    password.text.trim(),
+                    _selectedUserType, // Retrieves password from TextEditingControl
+                  );
+
+                  if (uid != null) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => LogIn()),
+                    );
+                    // Registration successful
+                    // Save additional user data to Firestore if needed
+                    // Redirect to another screen or perform any other actions
+                  } else {
+                    // Registration failed
+                    // Display an error message or handle the error appropriately
+                  }
                 }
-              },
-            ),
+                },
+            )
           ],
         ),
         bottomNavigationBar: BottomNavigationBar(

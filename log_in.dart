@@ -14,11 +14,10 @@ void main() async {
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   Future<String?> loginWithEmailAndPassword(
       String email,
-      String password,
+      String password
       ) async {
     try {
       final UserCredential result = await _auth.signInWithEmailAndPassword(
@@ -27,13 +26,6 @@ class AuthService {
       );
       final User? user = result.user;
       if (user != null) {
-        final userSnapshot = await _firestore
-            .collection('users')
-            .doc(user.uid)
-            .get();
-
-        final userName = userSnapshot.get('name');
-        final userEmail = userSnapshot.get('email');
         return user.uid;
       } else {
         return null;
@@ -68,7 +60,7 @@ class _LogInState extends State<LogIn> {
         primarySwatch: Colors.teal,
       ),
       home: Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.black45,
         appBar: AppBar(
           title: Text('Login'),
           centerTitle: true,
@@ -120,13 +112,25 @@ class _LogInState extends State<LogIn> {
                 );
 
                 if (uid != null) {
-                  Navigator.push(
+                  Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(builder: (context) => MyApp()),
-                  );// Login successful
+                  );
+                  // Login successful
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Login successful.'),
+                    ),
+                  );
                   // Redirect to another screen or perform any other actions
                 } else {
                   // Login failed
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Login failed.'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
                   // Display an error message or handle the error appropriately
                 }
               },
