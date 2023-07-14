@@ -5,6 +5,8 @@ import 'package:gradient_textfield/gradient_textfield.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'main.dart';
 import 'registration.dart';
+import 'manager_tasks.dart';
+import 'employee_tasks.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -51,6 +53,7 @@ class _LogInState extends State<LogIn> {
   ];
   TextEditingController email = TextEditingController();
   TextEditingController password = TextEditingController();
+  UserType _selectedUserType = UserType.Regular;
 
   @override
   Widget build(BuildContext context) {
@@ -112,10 +115,25 @@ class _LogInState extends State<LogIn> {
                 );
 
                 if (uid != null) {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (context) => MyApp()),
-                  );
+                  // Retrieve the user's profile from Firestore
+                  DocumentSnapshot userSnapshot = await FirebaseFirestore.instance
+                      .collection('users')
+                      .doc(uid)
+                      .get();
+
+                  String profileType = userSnapshot.get('userType');
+
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => profileType == 'admin'
+                            ? AdminManagerTasks()
+                            : EmployeeTask(),
+                      ),
+                          (Route<dynamic> route) => false,
+                    );
+                    // Re
+
                   // Login successful
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
@@ -142,15 +160,15 @@ class _LogInState extends State<LogIn> {
           backgroundColor: Colors.teal,
           currentIndex: _currentIndex,
           onTap: (int index) {
-    setState(() {
-    _currentIndex = index;
-    });
-    if (index == 0){
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => MyHomePage()),
-      );
-    }else if(index == 1) {
+            setState(() {
+              _currentIndex = index;
+          });
+          if (index == 0){
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => MyHomePage()),
+            );
+          }else if(index == 1) {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => Registration()),

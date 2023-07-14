@@ -5,6 +5,8 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'log_in.dart';
 import 'registration.dart';
+import 'manager_tasks.dart';
+import 'employee_tasks.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,7 +22,14 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.teal,
       ),
-      home: MyHomePage(),
+      initialRoute: '/',
+      routes: {
+        '/': (context) => MyHomePage(),
+        '/registration': (context) => Registration(),
+        '/login': (context) => LogIn(),
+        '/admin': (context) => AdminManagerTasks(),
+        '/employee': (context) => EmployeeTask(),
+      },
     );
   }
 }
@@ -62,6 +71,12 @@ class _MyHomePageState extends State<MyHomePage> {
         userEmail = userSnapshot.get('email');
         userType = userSnapshot.get('userType');
       });
+      // Redirect to appropriate page based on user type
+      if (userType == 'admin') {
+        Navigator.pushReplacementNamed(context, '/admin');
+      } else {
+        Navigator.pushReplacementNamed(context, '/employee');
+      }
     }
   }
 
@@ -185,21 +200,12 @@ class _MyHomePageState extends State<MyHomePage> {
           setState(() {
             _currentIndex = index;
           });
-          if (index == 0){
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => MyHomePage()),
-            );
-          }else if (index == 1) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => Registration()),
-            );
-          }else if (index == 2) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => LogIn()),
-            );
+          if (index == 0) {
+            Navigator.pushReplacementNamed(context, '/');
+          } else if (index == 1) {
+            Navigator.pushReplacementNamed(context, '/registration');
+          } else if (index == 2) {
+            Navigator.pushReplacementNamed(context, '/login');
           }
         },
         items: [

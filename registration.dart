@@ -5,6 +5,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:gradient_textfield/gradient_textfield.dart';
 import 'main.dart';
 import 'log_in.dart';
+import 'manager_tasks.dart';
+import 'employee_tasks.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -79,7 +81,6 @@ class _RegistrationState extends State<Registration> {
         primarySwatch: Colors.teal,
       ),
       home: Scaffold(
-        backgroundColor: Colors.black45,
         appBar: AppBar(
           title: Text('Registration'),
           centerTitle: true,
@@ -180,9 +181,10 @@ class _RegistrationState extends State<Registration> {
               backgroundColor: Colors.lightBlueAccent,
               child: const Text('Create'),
               onPressed: () async {
-                if (password.text.trim().length > 12) {
+                String trimmedPassword = password.text.trim();
+                if (trimmedPassword.length < 6 || trimmedPassword.length > 12) {
                   setState(() {
-                    _errorMessage = 'Password cannot exceed 12 characters';
+                    _errorMessage = 'Password must be between 6 and 12 characters';
                   });
                 } else {
                   final String? uid = await AuthService()
@@ -194,9 +196,14 @@ class _RegistrationState extends State<Registration> {
                   );
 
                   if (uid != null) {
-                    Navigator.push(
+                    Navigator.pushAndRemoveUntil(
                       context,
-                      MaterialPageRoute(builder: (context) => LogIn()),
+                      MaterialPageRoute(
+                        builder: (context) => _selectedUserType == UserType.Admin
+                            ? AdminManagerTasks()
+                            : EmployeeTask(),
+                      ),
+                          (Route<dynamic> route) => false,
                     );
                     // Registration successful
                     // Save additional user data to Firestore if needed
