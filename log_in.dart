@@ -7,6 +7,7 @@ import 'main.dart';
 import 'registration.dart';
 import 'manager_tasks.dart';
 import 'employee_tasks.dart';
+import 'completed_tasks.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

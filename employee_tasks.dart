@@ -7,6 +7,7 @@ import 'main.dart';
 import 'log_in.dart';
 import 'registration.dart';
 import 'employee_tasks.dart';
+import 'completed_tasks.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,8 +21,10 @@ class EmployeeTask extends StatefulWidget {
 }
 
 class _EmployeeTaskState extends State<EmployeeTask> {
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+
   Future<void> _logout() async {
-    await FirebaseAuth.instance.signOut();
+    await _auth.signOut();
     Navigator.pushAndRemoveUntil(
       context,
       MaterialPageRoute(builder: (context) => LogIn()),
@@ -80,16 +83,21 @@ class _EmployeeTaskState extends State<EmployeeTask> {
     );
   }
 
-  void markTaskAsCompleted(String taskId) {
+  void markTaskAsCompleted(String taskId) async {
     // Move the task from 'tasks' collection to 'completed_tasks' collection
-    FirebaseFirestore.instance.collection('tasks').doc(taskId).get().then((doc) {
-      if (doc.exists) {
-        String task = doc.get('task');
-        Timestamp timestamp = Timestamp.now();
+    DocumentSnapshot taskSnapshot = await FirebaseFirestore.instance.collection('tasks').doc(taskId).get();
+    if (taskSnapshot.exists) {
+      String task = taskSnapshot.get('task');
+      Timestamp timestamp = Timestamp.now();
+      User? user = _auth.currentUser;
+
+      if (user != null) {
+        String userName = user.displayName ?? user.email ?? '';
 
         FirebaseFirestore.instance.collection('completed_tasks').doc(taskId).set({
           'task': task,
           'timestamp': timestamp,
+          'user': {'name': userName},
         });
 
         FirebaseFirestore.instance.collection('tasks').doc(taskId).delete();
@@ -100,6 +108,6 @@ class _EmployeeTaskState extends State<EmployeeTask> {
           ),
         );
       }
-    });
+    }
   }
 }

@@ -7,6 +7,7 @@ import 'main.dart';
 import 'log_in.dart';
 import 'manager_tasks.dart';
 import 'employee_tasks.dart';
+import 'completed_tasks.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -81,6 +82,7 @@ class _RegistrationState extends State<Registration> {
         primarySwatch: Colors.teal,
       ),
       home: Scaffold(
+        backgroundColor: Colors.black45,
         appBar: AppBar(
           title: Text('Registration'),
           centerTitle: true,

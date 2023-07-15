@@ -7,6 +7,7 @@ import 'main.dart';
 import 'log_in.dart';
 import 'registration.dart';
 import 'employee_tasks.dart';
+import 'completed_tasks.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,8 +22,9 @@ class AdminManagerTasks extends StatefulWidget {
 
 class _AdminManagerTasksState extends State<AdminManagerTasks> {
   TextEditingController taskController = TextEditingController();
+  int _currentIndex = 0;
 
-  Future<void> _logout() async {
+  Future<void> _logout(BuildContext context) async {
     await FirebaseAuth.instance.signOut();
     Navigator.pushAndRemoveUntil(
       context,
@@ -36,136 +38,165 @@ class _AdminManagerTasksState extends State<AdminManagerTasks> {
     );
   }
 
+  void onTabTapped(int index) {
+    setState(() {
+      _currentIndex = index;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: Colors.black45,
-      child: Scaffold(
-        backgroundColor: Colors.black45,
-        appBar: AppBar(
-          title: Text('Manager Tasks'),
-          actions: [
-            IconButton(
-              icon: Icon(Icons.logout),
-              onPressed: _logout,
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Manager Tasks'),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.logout),
+            onPressed: () => _logout(context),
+          ),
+        ],
+      ),
+      backgroundColor: Colors.black45,
+      body: IndexedStack(
+        index: _currentIndex,
+        children: [
+          TaskPage(),
+          CompletedTasks(),
+        ],
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _currentIndex,
+        onTap: onTabTapped,
+        items: [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.list),
+            label: 'Tasks',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.check_circle),
+            label: 'Completed Tasks',
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class TaskPage extends StatelessWidget {
+  final TextEditingController taskController = TextEditingController();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black45,
+      body: Padding(
+        padding: EdgeInsets.all(20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Add New Task',
+              style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold, color: Colors.white),
             ),
-          ],
-        ),
-        body: Padding(
-          padding: EdgeInsets.all(20.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Add New Task',
-                style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold),
-              ),
-              Gradienttextfield(
-                controller: taskController,
-                radius: 40,
-                height: 60,
-                width: 400,
-                colors: const [Colors.lightBlueAccent, Colors.green],
-                text: "Enter Task",
-                fontColor: Colors.black,
-                fontSize: 15,
-                fontWeight: FontWeight.normal,
-              ),
-              SizedBox(height: 20.0),
-              ElevatedButton(
-                onPressed: () {
-                  addTask();
-                },
-                child: Container(
-                  width: 200.0,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Colors.lightBlueAccent, Colors.green],
-                      begin: Alignment.centerLeft,
-                      end: Alignment.centerRight,
-                    ),
-                    borderRadius: BorderRadius.circular(30),
+            Gradienttextfield(
+              controller: taskController,
+              radius: 40,
+              height: 60,
+              width: 400,
+              colors: const [Colors.lightBlueAccent, Colors.green],
+              text: "Enter Task",
+              fontColor: Colors.black,
+              fontSize: 15,
+              fontWeight: FontWeight.normal,
+            ),
+            SizedBox(height: 20.0),
+            ElevatedButton(
+              onPressed: () {
+                addTask(context);
+              },
+              child: Container(
+                width: 200.0,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Colors.lightBlueAccent, Colors.green],
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
                   ),
-                  padding: EdgeInsets.symmetric(vertical: 15),
-                  child: Center(
-                    child: Text(
-                      'Add Task',
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontSize: 16,
-                      ),
+                  borderRadius: BorderRadius.circular(30),
+                ),
+                padding: EdgeInsets.symmetric(vertical: 15),
+                child: Center(
+                  child: Text(
+                    'Add Task',
+                    style: TextStyle(
+                      color: Colors.black,
+                      fontSize: 16,
                     ),
                   ),
                 ),
               ),
-              SizedBox(height: 20.0),
-              Text(
-                'Completed Tasks',
-                style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 20.0),
+            Text(
+              'Tasks',
+              style: TextStyle(
+                fontSize: 20.0,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
               ),
-              StreamBuilder<QuerySnapshot>(
-                stream: FirebaseFirestore.instance
-                    .collection('completed_tasks')
-                    .snapshots(),
+            ),
+            Expanded(
+              child: StreamBuilder<QuerySnapshot>(
+                stream: FirebaseFirestore.instance.collection('tasks').snapshots(),
                 builder: (context, snapshot) {
                   if (!snapshot.hasData) {
                     return CircularProgressIndicator();
                   }
 
-                  List<Widget> completedTasks = [];
+                  final tasks = snapshot.data!.docs;
 
-                  snapshot.data!.docs.forEach((doc) {
-                    String taskId = doc.id;
-                    String task = doc.get('task');
-                    Timestamp timestamp = doc.get('timestamp');
+                  return ListView.builder(
+                    itemCount: tasks.length,
+                    itemBuilder: (context, index) {
+                      final task = tasks[index].get('task');
 
-                    completedTasks.add(
-                      ListTile(
+                      return ListTile(
                         title: Text(
                           task,
                           style: TextStyle(color: Colors.teal),
                         ),
-                        subtitle: Text(timestamp.toDate().toString(),
-                        style: TextStyle(color: Colors.teal),),
                         trailing: Container(
-                          color: Colors.black45, // Change the color here
+                          color: Colors.black45,
                           child: IconButton(
                             icon: Icon(Icons.delete),
-                            color: Colors.white, // Change the color here
+                            color: Colors.white,
                             onPressed: () {
-                              deleteTask(taskId);
+                              deleteTask(tasks[index].id);
                             },
                           ),
                         ),
-                      ),
-                    );
-                  });
-
-                  return Column(
-                    children: completedTasks,
+                      );
+                    },
                   );
                 },
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  void addTask() {
+  void addTask(BuildContext context) {
     String task = taskController.text;
 
     if (task.isNotEmpty) {
-      // Add task to Firestore
-      FirebaseFirestore.instance.collection('completed_tasks').add({
+      FirebaseFirestore.instance.collection('tasks').add({
         'task': task,
       });
 
-      // Clear the task text field
       taskController.clear();
 
-      // Show a notification or perform any other action for admin
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Task added successfully.'),
@@ -182,15 +213,6 @@ class _AdminManagerTasksState extends State<AdminManagerTasks> {
   }
 
   void deleteTask(String taskId) {
-    FirebaseFirestore.instance
-        .collection('completed_tasks')
-        .doc(taskId)
-        .delete();
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Task deleted successfully.'),
-      ),
-    );
+    FirebaseFirestore.instance.collection('tasks').doc(taskId).delete();
   }
 }
