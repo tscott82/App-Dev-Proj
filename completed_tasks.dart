@@ -46,23 +46,32 @@ class CompletedTasks extends StatelessWidget {
                     itemBuilder: (context, index) {
                       final task = completedTasks[index].get('task');
                       final timestamp = completedTasks[index].get('timestamp');
-                      final user = completedTasks[index].get('user')['name']; // Assuming the user object has a 'name' field
+                      final user = completedTasks[index].get('user');
+                      final userName = user['name'];
+
                       final formattedDate = _dateFormat.format(timestamp.toDate());
                       final formattedTime = _timeFormat.format(timestamp.toDate());
 
                       return ListTile(
-                        title: Text(task,
-                        style: TextStyle(color: Colors.teal)),
+                        title: Text(
+                          task,
+                          style: TextStyle(color: Colors.teal),
+                        ),
                         subtitle: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Completed by: $user',
-                                style: TextStyle(color: Colors.white)),
-                            Text(formattedDate,
-                                style: TextStyle(color: Colors.white)),
-                            Text(formattedTime,
-                                style: TextStyle(color: Colors.white)),
-
+                            Text(
+                              'Completed by: $userName',
+                              style: TextStyle(color: Colors.white),
+                            ),
+                            Text(
+                              formattedDate,
+                              style: TextStyle(color: Colors.white),
+                            ),
+                            Text(
+                              formattedTime,
+                              style: TextStyle(color: Colors.white),
+                            ),
                           ],
                         ),
                       );

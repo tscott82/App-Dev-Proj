@@ -23,6 +23,32 @@ class AdminManagerTasks extends StatefulWidget {
 class _AdminManagerTasksState extends State<AdminManagerTasks> {
   TextEditingController taskController = TextEditingController();
   int _currentIndex = 0;
+  String? userName;
+  String? userEmail;
+  String? userType;
+
+  @override
+  void initState() {
+    super.initState();
+    getUserInformation();
+  }
+
+  Future<void> getUserInformation() async {
+    final User? user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      // Retrieve additional user information
+      final userSnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+
+      setState(() {
+        userName = userSnapshot.get('name');
+        userEmail = userSnapshot.get('email');
+        userType = userSnapshot.get('userType');
+      });
+    }
+  }
 
   Future<void> _logout(BuildContext context) async {
     await FirebaseAuth.instance.signOut();
@@ -57,11 +83,36 @@ class _AdminManagerTasksState extends State<AdminManagerTasks> {
         ],
       ),
       backgroundColor: Colors.black45,
-      body: IndexedStack(
-        index: _currentIndex,
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          TaskPage(),
-          CompletedTasks(),
+          if (userName != null)
+            Text(
+              'Logged in as: $userName',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.teal,
+              ),
+            ),
+          if (userType != null)
+            Text(
+              userType!,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.teal,
+              ),
+            ),
+          Expanded(
+            child: IndexedStack(
+              index: _currentIndex,
+              children: [
+                TaskPage(),
+                CompletedTasks(),
+              ],
+            ),
+          ),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(

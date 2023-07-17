@@ -55,6 +55,7 @@ class _LogInState extends State<LogIn> {
   TextEditingController email = TextEditingController();
   TextEditingController password = TextEditingController();
   UserType _selectedUserType = UserType.Regular;
+  String? errorMessage;
 
   @override
   Widget build(BuildContext context) {
@@ -108,8 +109,17 @@ class _LogInState extends State<LogIn> {
               fontSize: 15,
               fontWeight: FontWeight.normal,
             ),
+            if (errorMessage != null)
+              Text(
+                errorMessage!,
+                style: TextStyle(color: Colors.red),
+              ),
             ElevatedButton(
               onPressed: () async {
+                setState(() {
+                  errorMessage = null; // Reset the error message
+                });
+
                 final String? uid = await AuthService().loginWithEmailAndPassword(
                   email.text.trim(),
                   password.text.trim(),
@@ -124,32 +134,20 @@ class _LogInState extends State<LogIn> {
 
                   String profileType = userSnapshot.get('userType');
 
-                    Navigator.pushAndRemoveUntil(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => profileType == 'admin'
-                            ? AdminManagerTasks()
-                            : EmployeeTask(),
-                      ),
-                          (Route<dynamic> route) => false,
-                    );
-                    // Re
-
-                  // Login successful
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Login successful.'),
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => profileType == 'admin'
+                          ? AdminManagerTasks()
+                          : EmployeeTask(),
                     ),
+                        (Route<dynamic> route) => false,
                   );
                   // Redirect to another screen or perform any other actions
                 } else {
-                  // Login failed
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Login failed.'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
+                  setState(() {
+                    errorMessage = 'Invalid email or password.';
+                  });
                   // Display an error message or handle the error appropriately
                 }
               },
@@ -163,18 +161,18 @@ class _LogInState extends State<LogIn> {
           onTap: (int index) {
             setState(() {
               _currentIndex = index;
-          });
-          if (index == 0){
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => MyHomePage()),
-            );
-          }else if(index == 1) {
+            });
+            if (index == 0) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => MyHomePage()),
+              );
+            } else if (index == 1) {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => Registration()),
               );
-            }else if (index == 2) {
+            } else if (index == 2) {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => LogIn()),
